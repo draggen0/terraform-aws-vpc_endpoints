@@ -6,7 +6,7 @@ import boto3
 AWS_REGION = 'us-east-1'
 TF_TEMPLATE_PATH = 'templates/{}.tf.json.template'
 TF_OUTPUT_PATH = '../{}.tf.json'
-KNOWN_PREFIXES = ["aws.", "com.amazonaws."]
+KNOWN_PREFIXES = ["io.", "aws.", "com.amazonaws."]
 VALIDATION_CONDITION_STRING = """${var.%s == [] ? true : can([for s in var.%s : regex("%s", s)])}"""
 VALIDATION_CONDITION_STRING_POLICY = (
     """${[for k, v in var.%s: k] == [] ? true : can([for s in [for k, v in var.%s: k] : regex("%s", s)])}"""
@@ -61,7 +61,7 @@ def endpoint_is_valid(svc):
     if svc['ManagesVpcEndpoints']:
         print(f"skipping endpoint that manages vpc endpoints {svc['ServiceName']}")
         return False
-    if not svc["ServiceName"].startswith("com.amazonaws.") and not svc["ServiceName"].startswith("aws.sagemaker."):
+    if not svc["ServiceName"].startswith("com.amazonaws.") and not svc["ServiceName"].startswith("aws.sagemaker.") and not svc["ServiceName"].startswith("aws.api"):
         print(f"skipping endpoint that has unexpected name format {svc['ServiceName']}")
         return False
     trim_base_endpoint_names(svc)
@@ -116,9 +116,7 @@ def parse_endpoint(name, endpoint_type, tf_endpoints, tf_locals, ep, available_e
     elif endpoint_type == 'Interface':
         tf_endpoints[resource_name]['security_group_ids'] = '${local.sg_ids}'
         tf_endpoints[resource_name]['subnet_ids'] = '${length(var.subnet_ids) > 0 ? var.subnet_ids : null}'
-        # s3 doesn't support private_dns
-        if name not in ["s3"]:
-            tf_endpoints[resource_name]['private_dns_enabled'] = '${var.private_dns_enabled}'
+        tf_endpoints[resource_name]['private_dns_enabled'] = '${var.private_dns_enabled}'
     if ep["VpcEndpointPolicySupported"]:
         tf_endpoints[resource_name]['policy'] = '${try(jsonencode(var.%s_endpoint_policies.%s), null)}' % (
         endpoint_type.lower(), name)

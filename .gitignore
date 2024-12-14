@@ -42,3 +42,9 @@ test/test_report.html
 
 go.mod
 go.sum
+
+# custom variable file
+terraform.tfvars
+
+# virtual environment
+.venv
